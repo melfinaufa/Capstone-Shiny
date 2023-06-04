@@ -1,0 +1,456 @@
+---
+title: "Data Prep"
+author: "Melfin"
+date: "5/29/2023"
+output: html_document
+---
+
+
+
+# LBB Interactive Plotting
+
+Report R Markdown ini dubuat untuk tujuan pembelajaran self learning materi Interactive Plotting dengan menggunakan Software R.
+Pada LBB ini saya menggunakan data Bencana Alam yang saya ambil dari website https://gis.bnpb.go.id/ dalam bentuk file excel.
+Data tersebut saya tarik dari rentang waktu 1 januari 2023 hingga 28 Mei 2023.
+Pada LBB ini bertujuan untuk memonitoring kejadian Bencana Alam di Indonesia sehingga untuk memudahkan monitoring diperlukan sistem Dashboard, yang dalam LBB ini mengaplikasikan dengan menggunakan Shiny Dashboard.
+
+
+## Import Library
+
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(glue)
+```
+
+
+## Read Data
+
+```{r}
+#read data
+
+disaster <- read_excel("Data Bencana.xlsx")
+head(disaster)
+```
+
+
+## Cek Struktur Data
+
+```{r}
+# Cek struktur data
+
+disaster %>% 
+  glimpse()
+```
+```{r}
+# Mengetahui kolom-kolom apa saja yang ada di data
+colnames(disaster)
+
+```
+
+seleksi kolom mana yang akan dipake dalam tahapan selanjutnya
+
+Kolom yang tidak dipakai
+No, Kode Identitas Bencana, Kronologi & Dokumentasi, 
+
+kolom yang dipakai: 
+ID Kabupaten, Tanggal Kejadian, Kejadian, Lokasi, Kejadian, Lokasi, Kabupaten, Provinsi, Penyebab, Meninggal, Hilang, Terluka, Rumah Rusak, Rumah Terendam, Fasum Rusak
+
+```{r}
+# Hilangkan kolom yang tidak dipakai
+disaster <- disaster %>% 
+  select(-c("No.", "Kode_Identitas_Bencana", "Kronologi & Dokumentasi"))
+head(disaster)
+```
+
+
+## Mengubah Tipe Data
+
+
+Mengubah tipe data
+Tipe data yang belum sesuai diantaranya adalah:
+
+ID Kabupaten : factor
+Tanggal Kejadian: YMD <- Lubridate
+kejadian : factor
+Kabupaten : factor
+Provinsi : factor
+Meninggal, Hilang, Terluka, Rumah Rusak, Rumah Terendam, Fasum Rusak : integer
+
+
+
+```{r}
+disaster <- disaster %>% 
+  mutate(ID_Kabupaten = as.factor(ID_Kabupaten),
+         Kejadian = as.factor(Kejadian),
+         Kabupaten = as.factor(Kabupaten),
+         Provinsi = as.factor(Provinsi),
+         Meninggal = as.integer(Meninggal),
+         Hilang = as.integer(Hilang),
+         Terluka = as.integer(Terluka),
+         Rumah_Rusak = as.integer(Rumah_Rusak), 
+         Rumah_Terendam = as.integer(Rumah_Terendam), 
+         Fasum_Rusak = as.integer(Fasum_Rusak))
+
+glimpse(disaster)
+```
+
+sekarang, mari kita sesuaikan tipe data tanggal kejadian dengan menggunakan lubridate
+
+```{r}
+library(lubridate)
+disaster$Tanggal_Kejadian <- ymd(disaster$Tanggal_Kejadian)
+class(disaster$Tanggal_Kejadian)
+```
+
+```{r}
+head(disaster)
+```
+
+```{r}
+glimpse(disaster)
+```
+
+## Cek Missing Value
+
+
+```{r}
+disaster %>% 
+  is.na() %>% 
+  colSums()
+```
+## Replace NA
+
+Karena pada data ditemukan banyak NA pada bagian meninggal, Hilang, Terluka, Rumah_Rusak, Rumah_Terendam artinya bahwa tidak ada seingga diganti dengan 0
+
+```{r}
+disaster <- disaster %>% 
+  mutate(Meninggal = coalesce(Meninggal,0)) %>% 
+  mutate(Hilang = coalesce(Hilang,0)) %>% 
+  mutate(Terluka = coalesce(Terluka,0)) %>% 
+  mutate(Rumah_Rusak = coalesce(Rumah_Rusak,0)) %>% 
+  mutate(Rumah_Terendam = coalesce(Rumah_Terendam,0))
+
+```
+
+```{r}
+disaster %>% 
+  is.na()  %>% 
+  colSums()
+```
+
+Kolom kosong NA sudah terisi dengan 0 karena memang tidak ada jumlah yang meninggal/terluka
+tinggal kolom Lokasi dan Penyebab yang tidak diketahui sehingga kita drop baris nya yang kosong menggunakan `na.omit`
+
+```{r}
+disaster_clean <- disaster %>% 
+  na.omit(Lokasi, Penyebab)
+```
+
+Data sudah bersih tidak ada missing value / NA 
+
+## Business Question
+
+1. Untuk bagian tab item pertama, tujuan nya yaitu untuk menampilkan output:
+- Jumlah Orang Meninggal, Jumlah Orang Terluka, Jumlah Rumah Rusak, Jumlah Rumah Terendam, dan Jumlah Fasilitas Umum Rusak di seluruh provinsi Indonesia berdasarkan Bulan dan berdasarkan Kejadian. sehingga User bisa memilih ingin melihat di bulan apa dan jenis kejadian bencana apa dengan mudah.
+
+- Melihat trend jumlah kejadian bencana di seluruh provinsi setap hari nya berdasarkan inputan bulan dan jenis kejadian bencana yang dipilih.
+
+- Melihat top 10 provinsi dengan kejadian bencana tertinggi yang dipilih menurut bulan dan kejadian nya.
+
+
+## REference
+
+1. https://www.kaggle.com/code/kiyoung1027/simple-coronavirus-dashboard 
+2. https://www.kaggle.com/code/kateleung0503/flight-delay-in-the-us-exploratory-analysis
+
+
+
+## Data Aggregation
+
+```{r}
+disaster_clean %>% 
+  is.na() %>% 
+  colSums()
+```
+
+
+mendapatkan data jumlah kejadian 
+
+
+
+```{r}
+dis <- disaster_clean %>%
+  mutate(Bulan = month(Tanggal_Kejadian, label = TRUE, abbr = FALSE)) %>% 
+  mutate(Tanggal = day(Tanggal_Kejadian))
+dis
+```
+
+
+
+```{r}
+plot_agg_1 <- dis %>% 
+  group_by(Kejadian) %>% 
+  summarise(Jumlah_Kejadian = n()) %>% 
+  arrange(desc(Jumlah_Kejadian))
+plot_agg_1
+```
+```{r}
+     plot_agg_1 <-  plot_agg_1 %>% 
+        mutate(label=glue("Kejadian :  {Kejadian}
+      Jumlah Kejadian : {Jumlah_Kejadian} Kali"))
+    
+    # Plot Rangking Statis
+    plot_ranking <- plot_agg_1 %>% 
+      ggplot(mapping=aes(x = reorder(Kejadian,Jumlah_Kejadian),
+                         y = Jumlah_Kejadian,
+                         text = label)) + 
+      geom_col(aes(fill = Kejadian)) +
+    
+      
+      labs(title = "Jumlah Kejadian Bencana Bulan Menurut Jenis Bencana",
+           x = NULL,
+           y = "Kali") +
+      
+      theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.04),
+            axis.ticks.y = element_blank(),
+            panel.background = element_rect(fill = "#ffffff"), 
+            panel.grid.major.x = element_line(colour = "grey"),
+            axis.line.x = element_line(color = "grey"),
+            axis.text.x = element_blank())
+    
+    # Plot Rangking Interaktif
+    ggplotly(plot_ranking, tooltip = "text")
+
+```
+
+
+Menghilangkan Levels pada bulan
+
+```{r}
+levels(dis$Bulan)
+dis$Bulan <- droplevels(dis$Bulan)
+```
+Yang ikut seharusnya Januari hingga Mei
+
+```{r}
+levels(dis$Bulan)
+```
+
+## Data Aggregation untuk mengetahui jumlah kejadian di setiap tanggal di setiap kategori bencana nya
+
+
+
+```{r}
+plot_agg_2 <- dis %>% 
+  group_by(Tanggal, Kejadian) %>% 
+  summarise(Jumlah_Kejadian =n())
+plot_agg_2
+```
+
+
+```{r}
+
+plot_agg_2 <-  plot_agg_2 %>% 
+  mutate(label=glue("Tanggal :  {Tanggal}
+  Jenis Kejadian : {Kejadian}
+  Jumlah Kejadian : {Jumlah_Kejadian} Kali"))
+
+plot_trend <- plot_agg_2 %>% 
+  ggplot(mapping = aes(x= Tanggal, y= Jumlah_Kejadian, text = label )) +
+  geom_col(aes(color = Kejadian)) +
+  
+  labs(title = "Jumlah Kejadian Bencana Bulan",
+        x = NULL,
+        y = "Kali") +
+  
+  scale_x_continuous(breaks = seq(1,31,1)) +
+  theme_classic()
+    
+    # # Plot Rangking Interaktif
+    ggplotly(plot_trend, tooltip = "text")
+    # 
+
+```
+
+
+```{r}
+plot2 <- plot_agg_2 %>% 
+  ggplot(mapping = aes( x= Tanggal, 
+                        y = Jumlah_Kejadian)) +
+  geom_area(aes(color = Kejadian), fill = "#355C7D", linetype = "dashed") +
+  geom_point(aes(color = Kejadian,
+                  text = glue("Tanggal :  {Tanggal}
+                                    Jenis Kejadian : {Kejadian}
+                                    Jumlah Kejadian : {Jumlah_Kejadian} Kali"))) +
+  
+  
+  scale_x_continuous(breaks = seq(1,31,1)) +
+  
+  labs(title = "Trend Jumlah Kejadian Bencana",
+       subtitle = "Bulan",
+       x = "Tanggal",
+       y = "Jumlah Kejadian",
+       color = "Jenis Bencana") +
+  
+  theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.04),
+            axis.ticks.y = element_blank(),
+            panel.background = element_rect(fill = "#ffffff"), 
+            panel.grid.major.x = element_line(colour = "grey"),
+            axis.line.x = element_line(color = "grey"),
+            axis.text = element_text(size = 10, colour = "black"))
+
+ggplotly(plot2, tooltip = "text")
+  
+```
+
+## Data Aggregation Value Box
+
+
+
+```{r}
+# Mengetahui Jumlah Meninggal di Setiap Bulan dan Kejadian
+mng <- dis %>% 
+  group_by(Bulan, Kejadian) %>% 
+  summarise(Jumlah_Meninggal = sum(Meninggal))
+mng
+```
+
+
+
+```{r}
+sum(mng$Jumlah_Meninggal)
+```
+
+## data Ggregation Top Provinsi
+
+```{r}
+plot_agg_3 <- dis %>% 
+  group_by(Provinsi, Kejadian) %>% 
+  summarise(Jumlah_Kejadian = n()) %>% 
+  arrange(desc(Jumlah_Kejadian)) %>% 
+  ungroup() %>% 
+  top_n(10)
+plot_agg_3
+```
+
+
+```{r}
+plot_agg_3 %>% 
+  ggplot(mapping = aes(x= Jumlah_Kejadian , y= reorder(Provinsi, Jumlah_Kejadian))) +
+  geom_col(aes(fill = Kejadian))
+```
+
+
+
+
+
+## Bagian 2
+
+```{r}
+levels(dis$Provinsi)
+```
+
+```{r}
+    plot_agg_3.1 <- dis %>%
+
+      group_by(Bulan, Kejadian) %>% 
+      summarise(Jumlah_Kejadian = n())
+    
+    plot_agg_3.1 <- plot_agg_3.1 %>% 
+      mutate(label= glue("Bulan : {Bulan} 
+                          Jenis Bencana : {Kejadian}
+                          Jumlah Kejadian : {Jumlah_Kejadian}"))
+    
+    plot3 <- plot_agg_3.1 %>% 
+      ggplot(mapping = aes(x = Bulan, y = Jumlah_Kejadian, text = label)) +
+      geom_col() 
+    plot3
+```
+
+
+```{r}
+kejadianperbulan <- as.data.frame(table(dis$Kejadian))
+names(kejadianperbulan) <- c("Kejadian", "Freq")
+
+head(kejadianperbulan)
+
+```
+
+
+Membuat plot untuk mengetahui juumlah korban manusia maupun rumah yang diakibatkan oleh semua bencana menurut provinsi
+
+
+```{r}
+plot_agg_3.3 <- dis %>% 
+  select(Bulan, Meninggal, Terluka, Hilang, Rumah_Rusak, Rumah_Terendam, Fasum_Rusak) %>% 
+  group_by(Bulan) %>% 
+  summarise(sum(Meninggal, Terluka,Hilang, Rumah_Rusak, Rumah_Terendam, Fasum_Rusak))
+plot_agg_3.3
+```
+
+
+```{r}
+plot_agg_3.4 <- dis %>% 
+  select(Bulan, Meninggal, Terluka, Hilang, Rumah_Rusak, Rumah_Terendam, Fasum_Rusak) %>% 
+  group_by(Bulan) %>% 
+  summarise(orgmeninggal = sum(Meninggal), orgterluka = sum(Terluka), orghilang = sum(Hilang), rmhrsk = sum(Rumah_Rusak), rmhterendam = sum(Rumah_Terendam), fasrusak= sum(Fasum_Rusak))
+
+plot_agg_3.4
+```
+
+```{r}
+plot_agg_3.4 %>% 
+  ggplot(mapping = aes(x = Bulan, y = orgmeninggal +orgterluka )) +
+  geom_col(aes())
+```
+
+PIVOT LONGER
+
+
+```{r}
+data_agg_pivot <- dis %>% 
+  pivot_longer(cols = c("Meninggal", "Terluka", "Hilang", "Rumah_Rusak", "Rumah_Terendam", "Fasum_Rusak"),
+               names_to = "Korban_Kerusakan",
+               values_to = "Jumlah_Korban")
+
+data_agg_pivot
+```
+
+
+
+```{r}
+dis_pivot <- data_agg_pivot %>% 
+  group_by(Bulan, Korban_Kerusakan) %>% 
+  summarise(Total_Korban = sum(Jumlah_Korban))
+dis_pivot 
+```
+
+
+```{r}
+dis_pivot %>% 
+  ggplot(mapping = aes(x = Bulan, y = Total_Korban)) +
+  geom_col(aes(fill = Korban_Kerusakan))
+
+```
+
+
+```{r}
+
+plot_agg_4.1 <- dis %>% 
+  select(Tanggal_Kejadian, Kejadian) %>% 
+  group_by(Tanggal_Kejadian, Kejadian) %>% 
+  summarise(Jumlah_Kejadian = n())
+plot_agg_4.1
+```
+
+
+```{r}
+plot_agg_4.1 %>% 
+  ggplot(mapping = aes( x =Tanggal_Kejadian , y = Jumlah_Kejadian)) +
+  geom_col(aes(fill = Kejadian) , position = "dodge")
+```
+

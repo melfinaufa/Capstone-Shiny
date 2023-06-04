@@ -1,0 +1,173 @@
+---
+title: "Data Prep for Map"
+author: "Melfin"
+date: "6/4/2023"
+output: html_document
+---
+
+Import library yang dibutuhkan
+
+```{r}
+library(readxl)
+library(dplyr)
+library(glue)
+library(leaflet)
+```
+
+Read data bencana alam yang sudah di cleansing sebelumnya untuk bahan pengolahan data input pada map
+
+```{r}
+perdismap <- read_excel("Data Agg Per Kejadian.xlsx")
+```
+
+Read data rds untuk membuat map
+
+```{r}
+indo_sf <- as.data.frame(readRDS("gadm36_IDN_1_sf.rds")) 
+head(indo_sf)
+```
+
+Dari data xls dan rds di ataas memiliki kesamaan, yaotu Provinsi, (Name_1 dan Provinsi) sehingga nanti nya variabel tersebut akan dijadikan ID untuk menghubungkan antara data xls dan rds.
+
+Namun, sebelum digabungkan perlu dicek terlebih dahulu pada kedua data tersebtu, apakah terdapat perbedaan penulisan.
+
+## Data Wrangling
+
+
+```{r}
+indo_sf$NAME_1
+```
+
+
+
+```{r}
+unique(perdismap$Provinsi)
+```
+
+
+Dikarenakan pada data xls nama provinsi menggunakan huruf besar semua, maka pada data rds nama provinsi diubah menjadi huruf besar semua
+
+
+```{r}
+indo_sf <- indo_sf %>% 
+mutate(Provinsi = toupper(NAME_1)) 
+head(indo_sf)
+```
+
+```{r}
+#indo_sf[indo_sf$Provinsi == dismap$Provinsi]
+```
+
+mencari tahu perbedaan dengan manual saja
+
+```{r}
+unique(perdismap$Provinsi)
+```
+
+```{r}
+indo_sf$Provinsi
+```
+
+
+Yang tidak sama: 
+
+- BANGKA BELITUNG ~ KEPULAUAN BANGKA BELITUNG
+- JAKARTA RAYA ~ DKI JAKARTA
+- KALIMANTAN UTARA tidak ada di rds
+- YOGYAKARTA ~ DI YOGYAKARTA
+
+
+Menyamakan list-list provinsi yang tidak sama 
+
+```{r}
+indo_sf %>% 
+  mutate(Provinsi = as.factor(Provinsi))
+```
+
+
+
+```{r}
+indo_sf_pergab <- indo_sf %>% 
+  mutate(Provinsi = case_when(Provinsi == "BANGKA BELITUNG" ~ "KEPULAUAN BANGKA BELITUNG",
+                              Provinsi == "JAKARTA RAYA" ~ "DKI JAKARTA",
+                              Provinsi == "YOGYAKARTA" ~ "DI YOGYAKARTA",
+                              TRUE~Provinsi)) %>% 
+  left_join(perdismap, by = c("Provinsi" = "Provinsi"))
+```
+
+```{r}
+head(indo_sf_pergab)
+```
+
+## Labelling
+
+agar ketika map di hover akan muncul keterangan tulisan
+
+
+```{r}
+labels_map <- glue("<b> {indo_sf_pergab$Provinsi}</b> <br>
+                     Jumlah Kejadian : {indo_sf_pergab$Banjir}") %>% 
+  lapply(htmltools::HTML)
+```
+
+
+## Color Scaling
+
+Untuk membedakan banyaknya jumlah kejadian . Namun sebelumnya melihat persebaran data terlebih dahulu.
+
+```{r}
+boxplot(indo_sf_pergab$Banjir)
+
+```
+
+
+dari boxplot di atas terdapat nilai outlier yang akan menjadi perancu saat visualisasi. oleh karena itu nilai dari count oif Kejadian aakan di transformasi log kan. 
+
+```{r}
+boxplot(log(indo_sf_pergab$Banjir))
+```
+Sudah tidak ada nilai outlier.
+
+
+### Membuat Color Pallete
+
+```{r}
+pal <- colorNumeric(palette = "Reds", 
+                    domain = log(indo_sf_pergab$Banjir))
+pal
+```
+
+
+
+## Visualisasi Map
+
+```{r}
+indo_sf_gab <- sf::st_as_sf(indo_sf_pergab)
+```
+
+
+```{r}
+indo_sf_gab %>% 
+  leaflet() %>% 
+  addProviderTiles(providers$CartoDB.DarkMatter) %>% 
+  addPolygons(fillColor = pal(log(indo_sf_pergab$Banjir)), 
+              fillOpacity = 0.8, 
+              weight = 2, 
+              label = labels_map,  
+              color = "white", 
+              highlightOptions = highlightOptions(
+                color = "blue", 
+                weight = 5, 
+                bringToFront = TRUE, 
+                opacity = 0.8
+               ))  %>% 
+  addLegend(pal = pal,
+            values = log(indo_sf_gab$Banjir),
+            labFormat = labelFormat(transform = function(x) round(x)),
+            opacity = 1,
+            title = "Jumlah Kejadian", position = "bottomleft")
+```
+
+
+
+
