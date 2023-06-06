@@ -26,7 +26,8 @@ library(DT) : untuk menampilkan dataset
 
 Neat code for header-sidebar-body structure
 Paragraph inside the body
-- Boxes :
+
+Boxes :
 - tabBox
 - valueBox
 - fluidRow
@@ -39,8 +40,13 @@ Dynamic Content:
 - Leaflet output
 - Data table output
 
+Other:
+- href link
+- Hover tooltip
 
 # UI
+
+## Overview
 
 ## MenuItem 1 Plot 
 
@@ -57,7 +63,7 @@ Dynamic Content:
 ![image.png](https://github.com/melfinaufa/Capstone-Shiny/blob/main/Screenshot%202023-06-06%20153510.png)
 
 
-## menuItem 2 DataTable
+## menuItem 4 DataTable
 
 ![image.png](https://github.com/melfinaufa/Capstone-Shiny/blob/main/Screenshot%202023-06-06%20153630.png)
 
