@@ -42,10 +42,23 @@ Dynamic Content:
 
 # UI
 
-![image.png](https://github.com/melfinaufa/Capstone-Shiny/blob/main/Screenshot%202023-06-06%20153205.png)
+## MenuItem 1 Plot 
+
 ![image.png](https://github.com/melfinaufa/Capstone-Shiny/blob/main/Screenshot%202023-06-06%20153348.png)
+
+
+## menuItem 2 Graph
+
 ![image.png](https://github.com/melfinaufa/Capstone-Shiny/blob/main/Screenshot%202023-06-06%20153437.png)
+
+
+## menuItem 3 Maph
+
 ![image.png](https://github.com/melfinaufa/Capstone-Shiny/blob/main/Screenshot%202023-06-06%20153510.png)
+
+
+## menuItem 2 DataTable
+
 ![image.png](https://github.com/melfinaufa/Capstone-Shiny/blob/main/Screenshot%202023-06-06%20153630.png)
 
 
