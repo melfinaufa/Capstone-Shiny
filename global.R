@@ -12,6 +12,7 @@ library(tidyr) # untuk custom keterangan axis atau lainnya
 library(stringr)# untuk melakuan kustom teks pada tooltip
 library(lubridate) # utntuk mengolah data tanggal
 library(leaflet)
+library(geojsonio)
 
 # Import Library Read Table
 library(DT) # untuk menampilkan dataset
@@ -61,21 +62,27 @@ disaster_clean <-  disaster %>%
 # Map Leaflet
 
 
-perdismap <- read_excel("Data Agg Per Kejadian.xlsx") # untuk input data bencana
-indo_sf <- as.data.frame(readRDS("gadm36_IDN_1_sf.rds")) # untuk data map polygon
+perdismap <- as.data.frame(read_excel("Data Agg Per Kejadian.xlsx")) # untuk input data bencana
+indo_sf <- readRDS("gadm36_IDN_1_sp.rds") # untuk data map polygon
+
+
 
 # Data Preparation Map
 
-indo_sf <- indo_sf %>% 
-  mutate(Provinsi = toupper(NAME_1)) %>% 
-  mutate(Provinsi = as.factor(Provinsi))
+# Mengubah huruf provinsi menjadi huruf besar semua
 
-indo_sf_pergab <- indo_sf %>% 
+indo_sf@data <- indo_sf@data %>% 
+  mutate(Provinsi = toupper(NAME_1)) 
+
+# menyamakan nama provinsi antara ke dua data
+
+indo_sf@data <- indo_sf@data %>% 
   mutate(Provinsi = case_when(Provinsi == "BANGKA BELITUNG" ~ "KEPULAUAN BANGKA BELITUNG",
                               Provinsi == "JAKARTA RAYA" ~ "DKI JAKARTA",
                               Provinsi == "YOGYAKARTA" ~ "DI YOGYAKARTA",
                               TRUE~Provinsi)) %>% 
   left_join(perdismap, by = c("Provinsi" = "Provinsi"))
+
 
   
 

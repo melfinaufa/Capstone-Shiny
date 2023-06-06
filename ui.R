@@ -1,7 +1,7 @@
 ui <- dashboardPage(title = "Bencana Alam",
                     
                     # Header
-                    dashboardHeader(title = "Dashboard Bencana Alam",titleWidth = 200,
+                    dashboardHeader(title = "Bencana Alam",titleWidth = 200,
                     tags$li(actionLink("LinkedIn", 
                                        label = "", 
                                        icon = icon("linkedin"),
@@ -34,7 +34,7 @@ ui <- dashboardPage(title = "Bencana Alam",
                         
                         menuItem("Data Table", tabName = "page2", icon = icon("table-list")),
                         
-                        menuItem("Source Code", icon = icon("github"), href = "https://github.com/melfinaufa/LBB_Shiny/blob/main"))
+                        menuItem("Source Code", icon = icon("github"), href = "https://github.com/melfinaufa/Capstone-Shiny"))
                         
                       ),
                       
@@ -48,7 +48,7 @@ ui <- dashboardPage(title = "Bencana Alam",
                       
                       
                       tabItem(tabName = "page1",
-                              h2("Report Kejadian Bencana Menurut Bulan dan Jenis Kejadian Bencana di Indonesia Tahun 2023"),
+                              h2(tags$b("Report Kejadian Bencana Menurut Bulan dan Jenis Kejadian Bencana di Indonesia Tahun 2023")),
                               br(),
                               
                               
@@ -61,7 +61,7 @@ ui <- dashboardPage(title = "Bencana Alam",
                                                 solidHeader = T,
                                                 background = "light-blue",
                                                 height = 100,
-                                                selectInput(inputId = "input_bulan",label = h4(tags$b("Bulan")),choices = levels(disaster_clean$Bulan), selected = "May")),
+                                                radioButtons(inputId = "input_bulan",label = h4(tags$b("Bulan")),choiceNames = toupper(unique(disaster_clean$Bulan)), choiceValues = unique(disaster_clean$Bulan), selected = "May", inline = TRUE)),
                                             box(width = 6,
                                                 solidHeader = T,
                                                 background = "light-blue",
@@ -82,7 +82,7 @@ ui <- dashboardPage(title = "Bencana Alam",
                                   ))),
                       
                       tabItem(tabName = "page3",
-                              h2("Report Proporsi Jumlah Kejadian Bencana Menurut Provinsi dan Bulan"),
+                              h2(tags$b("Report Proporsi Jumlah Kejadian Bencana Menurut Provinsi dan Bulan")),
                               br(),
                               
                               box(width = 12,
@@ -112,6 +112,9 @@ ui <- dashboardPage(title = "Bencana Alam",
                       # PAGE 4 ---------------------------------------------------------
                       
                       tabItem(tabName = "page4",
+                              h2(tags$b("Ilustrasi Sebaran Jumlah Kejadian Bencana di Setiap Provinsi di Indonesia")),
+                              br(),
+                              
                               
                               
                               fluidRow(
@@ -121,7 +124,14 @@ ui <- dashboardPage(title = "Bencana Alam",
                                     status = "warning",title = "Kejadian Bencana", radioButtons(inputId = "pilih_kejadian", 
                                                                                                 label = h4(tags$b("Kejadian Bencana")), 
                                                                                                 inline = TRUE,
-                                                                                                choiceNames = unique(indo_sf_gab$Kejadian),
+                                                                                                choiceNames =  c("BANJIR",
+                                                                                                                 "GELOMBANG PASANG/ABRASI",
+                                                                                                                 "GEMPA BUMI",
+                                                                                                                 "KEBAKARAN BUMI",
+                                                                                                                 "KEKERINGAN",
+                                                                                                                 "LETUSAN GUNUNG",
+                                                                                                                 "PUTING BELIUNG",
+                                                                                                                 "TANAH LONGSOR") ,
                                                                                                 choiceValues = c("Banjir",
                                                                                                                  "Gelombang_Pasang",
                                                                                                                  "Gempa_Bumi",

@@ -10,6 +10,7 @@ Import library yang dibutuhkan
 ```{r}
 library(readxl)
 library(dplyr)
+library(geojsonio)
 library(glue)
 library(leaflet)
 ```
@@ -17,14 +18,15 @@ library(leaflet)
 Read data bencana alam yang sudah di cleansing sebelumnya untuk bahan pengolahan data input pada map
 
 ```{r}
-perdismap <- read_excel("Data Agg Per Kejadian.xlsx")
+perdismap <- as.data.frame(read_excel("Data Agg Per Kejadian.xlsx"))
+perdismap
 ```
 
 Read data rds untuk membuat map
 
 ```{r}
-indo_sf <- as.data.frame(readRDS("gadm36_IDN_1_sf.rds")) 
-head(indo_sf)
+indo_sf <- readRDS("gadm36_IDN_1_sp.rds")
+indo_sf@data
 ```
 
 Dari data xls dan rds di ataas memiliki kesamaan, yaotu Provinsi, (Name_1 dan Provinsi) sehingga nanti nya variabel tersebut akan dijadikan ID untuk menghubungkan antara data xls dan rds.
@@ -35,7 +37,11 @@ Namun, sebelum digabungkan perlu dicek terlebih dahulu pada kedua data tersebtu,
 
 
 ```{r}
-indo_sf$NAME_1
+```
+
+
+```{r}
+indo_sf@data$NAME_1
 ```
 
 
@@ -49,26 +55,32 @@ Dikarenakan pada data xls nama provinsi menggunakan huruf besar semua, maka pada
 
 
 ```{r}
-indo_sf <- indo_sf %>% 
+indo_sf@data <- indo_sf@data %>% 
 mutate(Provinsi = toupper(NAME_1)) 
-head(indo_sf)
+indo_sf@data
 ```
 
 ```{r}
 #indo_sf[indo_sf$Provinsi == dismap$Provinsi]
 ```
 
-mencari tahu perbedaan dengan manual saja
+- mencari tahu perbedaan dengan cara manual 
+
 
 ```{r}
 unique(perdismap$Provinsi)
 ```
 
 ```{r}
-indo_sf$Provinsi
+indo_sf@data$Provinsi
 ```
 
+- mencari tahu perbedaan nama provinsi dengan cara filter kolom
 
+```{r}
+indo_sf@data %>% 
+  filter(!Provinsi %in% perdismap$Provinsi)
+```
 Yang tidak sama: 
 
 - BANGKA BELITUNG ~ KEPULAUAN BANGKA BELITUNG
@@ -76,18 +88,17 @@ Yang tidak sama:
 - KALIMANTAN UTARA tidak ada di rds
 - YOGYAKARTA ~ DI YOGYAKARTA
 
-
 Menyamakan list-list provinsi yang tidak sama 
 
 ```{r}
-indo_sf %>% 
-  mutate(Provinsi = as.factor(Provinsi))
+# indo_sf %>% 
+#   mutate(Provinsi = as.factor(Provinsi))
 ```
 
 
 
 ```{r}
-indo_sf_pergab <- indo_sf %>% 
+indo_sf@data <- indo_sf@data %>% 
   mutate(Provinsi = case_when(Provinsi == "BANGKA BELITUNG" ~ "KEPULAUAN BANGKA BELITUNG",
                               Provinsi == "JAKARTA RAYA" ~ "DKI JAKARTA",
                               Provinsi == "YOGYAKARTA" ~ "DI YOGYAKARTA",
@@ -96,7 +107,7 @@ indo_sf_pergab <- indo_sf %>%
 ```
 
 ```{r}
-head(indo_sf_pergab)
+indo_sf@data
 ```
 
 ## Labelling
@@ -105,8 +116,8 @@ agar ketika map di hover akan muncul keterangan tulisan
 
 
 ```{r}
-labels_map <- glue("<b> {indo_sf_pergab$Provinsi}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Banjir}") %>% 
+labels_Banjir <- glue("<b> {indo_sf@data$Provinsi}</b> <br>
+                     Jumlah Kejadian Banjir : {indo_sf@data$Banjir}") %>% 
   lapply(htmltools::HTML)
 ```
 
@@ -116,7 +127,7 @@ labels_map <- glue("<b> {indo_sf_pergab$Provinsi}</b> <br>
 Untuk membedakan banyaknya jumlah kejadian . Namun sebelumnya melihat persebaran data terlebih dahulu.
 
 ```{r}
-boxplot(indo_sf_pergab$Banjir)
+boxplot(indo_sf@data$Banjir)
 
 ```
 
@@ -124,7 +135,7 @@ boxplot(indo_sf_pergab$Banjir)
 dari boxplot di atas terdapat nilai outlier yang akan menjadi perancu saat visualisasi. oleh karena itu nilai dari count oif Kejadian aakan di transformasi log kan. 
 
 ```{r}
-boxplot(log(indo_sf_pergab$Banjir))
+boxplot(log(indo_sf@data$Banjir))
 ```
 Sudah tidak ada nilai outlier.
 
@@ -132,9 +143,9 @@ Sudah tidak ada nilai outlier.
 ### Membuat Color Pallete
 
 ```{r}
-pal <- colorNumeric(palette = "Reds", 
-                    domain = log(indo_sf_pergab$Banjir))
-pal
+pal_Banjir <- colorNumeric(palette = "Reds", 
+                    domain = log(indo_sf@data$Banjir))
+pal_Banjir
 ```
 
 
@@ -142,18 +153,18 @@ pal
 ## Visualisasi Map
 
 ```{r}
-indo_sf_gab <- sf::st_as_sf(indo_sf_pergab)
+# indo_sf@gab <- sf::st_as_sf(indo_sf_gab)
 ```
 
 
 ```{r}
-indo_sf_gab %>% 
+indo_sf %>% 
   leaflet() %>% 
   addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-  addPolygons(fillColor = pal(log(indo_sf_pergab$Banjir)), 
+  addPolygons(fillColor = pal_Banjir(log(indo_sf@data$Banjir)), 
               fillOpacity = 0.8, 
               weight = 2, 
-              label = labels_map,  
+              label = labels_Banjir,  
               color = "white", 
               highlightOptions = highlightOptions(
                 color = "blue", 
@@ -161,13 +172,24 @@ indo_sf_gab %>%
                 bringToFront = TRUE, 
                 opacity = 0.8
                ))  %>% 
-  addLegend(pal = pal,
-            values = log(indo_sf_gab$Banjir),
-            labFormat = labelFormat(transform = function(x) round(x)),
+  addLegend(pal = pal_Banjir,
+            values = log(indo_sf@data$Banjir),
+            labFormat = labelFormat(transform = function(x) round(exp(x))),
             opacity = 1,
-            title = "Jumlah Kejadian", position = "bottomleft")
+            title = "Jumlah Kejadian Banjir", position = "bottomleft")
 ```
 
 
+<!-- ```{r} -->
+<!-- indo_map <- readRDS("gadm36_IDN_1_sf.rds") -->
+<!-- ``` -->
 
+
+<!-- ```{r} -->
+<!-- write.csv(indo_map, "cek.csv", row.names= FALSE ) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- cek <- read.csv("cek.csv") -->
+<!-- ``` -->
 

@@ -444,28 +444,28 @@ function(input, output) {
   output$map_dis <- renderLeaflet({
     
     
-    indo_sf_pergab <- sf::st_as_sf(indo_sf_pergab)
+    # indo_sf_pergab <- sf::st_as_sf(indo_sf_pergab)
     
     
     if ("Banjir" %in% input$pilih_kejadian) {
       
-      labels_map_Banjir <- glue("<b> {indo_sf_pergab$Banjir}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Banjir}") %>% 
+      labels_Banjir <- glue("<b> {indo_sf@data$Provinsi}</b> <br>
+                     Jumlah Kejadian Banjir : {indo_sf@data$Banjir}") %>% 
         lapply(htmltools::HTML)
       
       # Membuat collor palet berdasarkan nilai
       
       pal_Banjir <- colorNumeric(palette = "Reds", 
-                          domain = log(indo_sf_pergab$Banjir))
+                          domain = log(indo_sf@data$Banjir))
    
       
-      indo_sf_pergab %>% 
+      indo_sf %>% 
         leaflet() %>% 
         addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-        addPolygons(fillColor = pal(log(indo_sf_pergab$Banjir)), 
+        addPolygons(fillColor = pal_Banjir(log(indo_sf@data$Banjir)), 
                     fillOpacity = 0.8, 
                     weight = 2, 
-                    label = labels_map_Banjir,  
+                    label = labels_Banjir,  
                     color = "white", 
                     highlightOptions = highlightOptions(
                       color = "blue", 
@@ -474,7 +474,7 @@ function(input, output) {
                       opacity = 0.8
                     ))  %>% 
         addLegend(pal = pal_Banjir,
-                  values = log(indo_sf_pergab$Banjir),
+                  values = log(indo_sf@data$Banjir),
                   labFormat = labelFormat(transform = function(x) round(exp(x))),
                   opacity = 1,
                   title = "Jumlah Kejadian Banjir", position = "bottomleft")
@@ -484,24 +484,24 @@ function(input, output) {
     
     else if ("Gelombang_Pasang" %in% input$pilih_kejadian) {
       
-      labels_map_Gelombang_Pasang <- glue("<b> {indo_sf_pergab$Gelombang_Pasang}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Gelombang_Pasang}") %>% 
+      labels_map_Gelombang_Pasang <- glue("<b> {indo_sf@data$Gelombang_Pasang}</b> <br>
+                     Jumlah Kejadian : {indo_sf@data$Gelombang_Pasang}") %>% 
         lapply(htmltools::HTML)
       
       # Membuat collor palet berdasarkan nilai
       
       pal_Gelombang_Pasang <- colorNumeric(palette = "Reds", 
-                                 domain = indo_sf_pergab$Gelombang_Pasang)
+                                 domain = indo_sf@data$Gelombang_Pasang)
       
   
       
-      indo_sf_pergab %>% 
+      indo_sf %>% 
         leaflet() %>% 
         addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-        addPolygons(fillColor = pal(indo_sf_pergab$Gelombang_Pasang), 
+        addPolygons(fillColor = pal_Gelombang_Pasang(indo_sf@data$Gelombang_Pasang), 
                     fillOpacity = 0.8, 
                     weight = 2, 
-                    label = labels_map_Gelombang_Pasang,  
+                    label = labels_Gelombang_Pasang,  
                     color = "white", 
                     highlightOptions = highlightOptions(
                       color = "blue", 
@@ -510,7 +510,7 @@ function(input, output) {
                       opacity = 0.8
                     ))  %>% 
         addLegend(pal = pal_Gelombang_Pasang,
-                  values = indo_sf_pergab$Gelombang_Pasang,
+                  values = indo_sf@data$Gelombang_Pasang,
                   opacity = 1,
                   title = "Jumlah Kejadian Gelombang Pasang", position = "bottomleft")
       
@@ -519,21 +519,21 @@ function(input, output) {
 
     else if ("Gempa_Bumi" %in% input$pilih_kejadian) {
       
-      labels_map_Gempa_Bumi <- glue("<b> {indo_sf_pergab$Gempa_Bumi}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Gempa_Bumi}") %>% 
+      labels_map_Gempa_Bumi <- glue("<b> {indo_sf@data$Gempa_Bumi}</b> <br>
+                     Jumlah Kejadian : {indo_sf@data$Gempa_Bumi}") %>% 
         lapply(htmltools::HTML)
       
       # Membuat collor palet berdasarkan nilai
       
       pal_Gempa_Bumi <- colorNumeric(palette = "Reds", 
-                                           domain = indo_sf_pergab$Gempa_Bumi)
+                                           domain = indo_sf@data$Gempa_Bumi)
       
       
       
-      indo_sf_pergab %>% 
+      indo_sf %>% 
         leaflet() %>% 
         addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-        addPolygons(fillColor = pal(indo_sf_pergab$Gempa_Bumi), 
+        addPolygons(fillColor = pal_Gempa_Bumi(indo_sf@data$Gempa_Bumi), 
                     fillOpacity = 0.8, 
                     weight = 2, 
                     label = labels_map_Gempa_Bumi,  
@@ -545,7 +545,7 @@ function(input, output) {
                       opacity = 0.8
                     ))  %>% 
         addLegend(pal = pal_Gempa_Bumi,
-                  values = indo_sf_pergab$Gempa_Bumi,
+                  values = indo_sf@data$Gempa_Bumi,
                   opacity = 1,
                   title = "Jumlah Kejadian Gempa Bumi", position = "bottomleft")
       
@@ -556,21 +556,21 @@ function(input, output) {
     
     else if ("Kebakaran_Hutan" %in% input$pilih_kejadian) {
       
-      labels_map_Kebakaran_Hutan <- glue("<b> {indo_sf_pergab$Kebakaran_Hutan}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Kebakaran_Hutan}") %>% 
+      labels_map_Kebakaran_Hutan <- glue("<b> {indo_sf@data$Kebakaran_Hutan}</b> <br>
+                     Jumlah Kejadian : {indo_sf@data$Kebakaran_Hutan}") %>% 
         lapply(htmltools::HTML)
       
       # Membuat collor palet berdasarkan nilai
       
       pal_Kebakaran_Hutan <- colorNumeric(palette = "Reds", 
-                                     domain = indo_sf_pergab$Kebakaran_Hutan)
+                                     domain = indo_sf@data$Kebakaran_Hutan)
       
       
       
-      indo_sf_pergab %>% 
+      indo_sf %>% 
         leaflet() %>% 
         addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-        addPolygons(fillColor = pal(indo_sf_pergab$Kebakaran_Hutan), 
+        addPolygons(fillColor = pal_Kebakaran_Hutan(indo_sf@data$Kebakaran_Hutan), 
                     fillOpacity = 0.8, 
                     weight = 2, 
                     label = labels_map_Kebakaran_Hutan,  
@@ -582,7 +582,7 @@ function(input, output) {
                       opacity = 0.8
                     ))  %>% 
         addLegend(pal = pal_Kebakaran_Hutan,
-                  values = indo_sf_pergab$Kebakaran_Hutan,
+                  values = indo_sf@data$Kebakaran_Hutan,
                   opacity = 1,
                   title = "Jumlah Kejadian Kebakaran Hutan", position = "bottomleft")
       
@@ -593,21 +593,21 @@ function(input, output) {
     
     else if ("Kekeringan" %in% input$pilih_kejadian) {
       
-      labels_map_Kekeringan <- glue("<b> {indo_sf_pergab$Kekeringan}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Kekeringan}") %>% 
+      labels_map_Kekeringan <- glue("<b> {indo_sf@data$Kekeringan}</b> <br>
+                     Jumlah Kejadian : {indo_sf@data$Kekeringan}") %>% 
         lapply(htmltools::HTML)
       
       # Membuat collor palet berdasarkan nilai
       
       pal_Kekeringan <- colorNumeric(palette = "Reds", 
-                                          domain = indo_sf_pergab$Kekeringan)
+                                          domain = indo_sf@data$Kekeringan)
       
       
       
-      indo_sf_pergab %>% 
+      indo_sf %>% 
         leaflet() %>% 
         addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-        addPolygons(fillColor = pal(indo_sf_pergab$Kekeringan), 
+        addPolygons(fillColor = pal_Kekeringan(indo_sf@data$Kekeringan), 
                     fillOpacity = 0.8, 
                     weight = 2, 
                     label = labels_map_Kekeringan,  
@@ -619,7 +619,7 @@ function(input, output) {
                       opacity = 0.8
                     ))  %>% 
         addLegend(pal = pal_Kekeringan,
-                  values = indo_sf_pergab$Kekeringan,
+                  values = indo_sf@data$Kekeringan,
                   opacity = 1,
                   title = "Jumlah Kejadian Kekeringan", position = "bottomleft")
       
@@ -629,21 +629,21 @@ function(input, output) {
     
     else if ("Letusan_Gunung" %in% input$pilih_kejadian) {
       
-      labels_map_Letusan_Gunung <- glue("<b> {indo_sf_pergab$Letusan_Gunung}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Letusan_Gunung}") %>% 
+      labels_map_Letusan_Gunung <- glue("<b> {indo_sf@data$Letusan_Gunung}</b> <br>
+                     Jumlah Kejadian : {indo_sf@data$Letusan_Gunung}") %>% 
         lapply(htmltools::HTML)
       
       # Membuat collor palet berdasarkan nilai
       
       pal_Letusan_Gunung <- colorNumeric(palette = "Reds", 
-                                     domain = indo_sf_pergab$Letusan_Gunung)
+                                     domain = indo_sf@data$Letusan_Gunung)
       
       
       
-      indo_sf_pergab %>% 
+      indo_sf %>% 
         leaflet() %>% 
         addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-        addPolygons(fillColor = pal(indo_sf_pergab$Letusan_Gunung), 
+        addPolygons(fillColor = pal_Letusan_Gunung(indo_sf@data$Letusan_Gunung), 
                     fillOpacity = 0.8, 
                     weight = 2, 
                     label = labels_map_Letusan_Gunung,  
@@ -655,7 +655,7 @@ function(input, output) {
                       opacity = 0.8
                     ))  %>% 
         addLegend(pal = pal_Letusan_Gunung,
-                  values = indo_sf_pergab$Letusan_Gunung,
+                  values = indo_sf@data$Letusan_Gunung,
                   opacity = 1,
                   title = "Jumlah Kejadian Letusan Gunung", position = "bottomleft")
       
@@ -665,21 +665,21 @@ function(input, output) {
     
     else if ("Puting_Beliung" %in% input$pilih_kejadian) {
       
-      labels_map_Puting_Beliung <- glue("<b> {indo_sf_pergab$Puting_Beliung}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Puting_Beliung}") %>% 
+      labels_map_Puting_Beliung <- glue("<b> {indo_sf@data$Puting_Beliung}</b> <br>
+                     Jumlah Kejadian : {indo_sf@data$Puting_Beliung}") %>% 
         lapply(htmltools::HTML)
       
       # Membuat collor palet berdasarkan nilai
       
       pal_Puting_Beliung <- colorNumeric(palette = "Reds", 
-                                         domain = indo_sf_pergab$Puting_Beliung)
+                                         domain = indo_sf@data$Puting_Beliung)
       
       
       
-      indo_sf_pergab %>% 
+      indo_sf %>% 
         leaflet() %>% 
         addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-        addPolygons(fillColor = pal(indo_sf_pergab$Puting_Beliung), 
+        addPolygons(fillColor = pal_Puting_Beliung(indo_sf@data$Puting_Beliung), 
                     fillOpacity = 0.8, 
                     weight = 2, 
                     label = labels_map_Puting_Beliung,  
@@ -691,7 +691,7 @@ function(input, output) {
                       opacity = 0.8
                     ))  %>% 
         addLegend(pal = pal_Puting_Beliung,
-                  values = indo_sf_pergab$Puting_Beliung,
+                  values = indo_sf@data$Puting_Beliung,
                   opacity = 1,
                   title = "Jumlah Kejadian Puting Beliung", position = "bottomleft")
       
@@ -700,21 +700,21 @@ function(input, output) {
     
     else if ("Tanah_Longsor" %in% input$pilih_kejadian) {
       
-      labels_map_Tanah_Longsor <- glue("<b> {indo_sf_pergab$Tanah_Longsor}</b> <br>
-                     Jumlah Kejadian : {indo_sf_pergab$Tanah_Longsor}") %>% 
+      labels_map_Tanah_Longsor <- glue("<b> {indo_sf@data$Tanah_Longsor}</b> <br>
+                     Jumlah Kejadian : {indo_sf@data$Tanah_Longsor}") %>% 
         lapply(htmltools::HTML)
       
       # Membuat collor palet berdasarkan nilai
       
       pal_Tanah_Longsor <- colorNumeric(palette = "Reds", 
-                                         domain = indo_sf_pergab$Tanah_Longsor)
+                                         domain = indo_sf@data$Tanah_Longsor)
       
       
       
-      indo_sf_pergab %>% 
+      indo_sf %>% 
         leaflet() %>% 
         addProviderTiles(providers$CartoDB.DarkMatter) %>% 
-        addPolygons(fillColor = pal(indo_sf_pergab$Tanah_Longsor), 
+        addPolygons(fillColor = pal_Tanah_Longsor(indo_sf@data$Tanah_Longsor), 
                     fillOpacity = 0.8, 
                     weight = 2, 
                     label = labels_map_Tanah_Longsor,  
@@ -726,7 +726,7 @@ function(input, output) {
                       opacity = 0.8
                     ))  %>% 
         addLegend(pal = pal_Tanah_Longsor,
-                  values = indo_sf_pergab$Tanah_Longsor,
+                  values = indo_sf@data$Tanah_Longsor,
                   opacity = 1,
                   title = "Jumlah Kejadian Tanah Longsor", position = "bottomleft")
       
@@ -769,7 +769,7 @@ function(input, output) {
            x = "Tanggal",
            y = "Jumlah Kejadian") +
       
-      theme(plot.title = element_text(face = "bold", size = 10, hjust = 0.05, vjust = 0.05),
+      theme(plot.title = element_text(face = "bold", size = 14, hjust = 0.05),
             legend.background = element_rect(fill="#e2eafc"),
             plot.title.position = "center",
             axis.ticks.y = element_blank(),

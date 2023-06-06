@@ -454,3 +454,16 @@ plot_agg_4.1 %>%
   geom_col(aes(fill = Kejadian) , position = "dodge")
 ```
 
+```{r}
+agg4 <- dis %>% 
+  group_by(Kejadian) %>% 
+  summarise(Jumlah_Kejadian = n())
+head(agg4)
+```
+
+
+
+```{r}
+head(data_agg_pivot)
+```
+
